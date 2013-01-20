@@ -25,6 +25,9 @@ window.onload = function () {
             // - shell le sprite à afficher
             this.addComponent("2D, Canvas, Keyboard, shell, Collision");
             
+            // Vitesse de déplacement du serpent
+            this.speed = 1;
+            
             // Positionnement du serpent sur le canvas
             this.attr({
                 x: 100,
@@ -36,7 +39,7 @@ window.onload = function () {
             
             // On déplace le serpent entre chaque frame
             this.bind("EnterFrame", function() {
-                this.move(this.currentDirection, 1.2);
+                this.move(this.currentDirection, this.speed);
             });
             
             // Changement de direction lorsque les touches directionnelles sont préssées
@@ -48,8 +51,37 @@ window.onload = function () {
             this.onHit("Wall", function(){
                 Crafty.scene("main");
             });
+            
+            // Si on attrape un fruit
+            this.onHit("Food", function(collision){
+                
+                // Destruction du fruit
+                collision[0].obj.destroy();
+                
+                // Création d'un nouveau fruit
+                Crafty.e("Food");
+                
+                // Augmentation de la vitesse
+                this.speed += 0.125;
+                
+            });
+            
         }
     });
+    
+    // Composant Food
+    Crafty.c("Food", {
+        init: function() {
+            this.addComponent("2D, Canvas, fruits, Collision");
+            this.attr({
+                w: 32,
+                h: 32,
+                // On ajoute un fruit positionné aléatoirement sur le terrain
+                x: Crafty.math.randomInt(32, 336),
+                y: Crafty.math.randomInt(32, 304)
+            });
+        }
+    })
     
     // Composant Mur
     Crafty.c("Wall", {
@@ -96,6 +128,9 @@ window.onload = function () {
         
         // Ajout du serpent sur le terrain de jeu
         Crafty.e("Snake");
+        
+        // Ajout du premier fruit
+        Crafty.e("Food");
         
     });
     
