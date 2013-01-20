@@ -21,13 +21,27 @@ window.onload = function () {
             // - 2D pour le placement
             // - Canvas pour la méthode d'affichage
             // - shell le sprite à afficher
-            this.addComponent("2D, Canvas, shell");
+            this.addComponent("2D, Canvas, Keyboard, shell");
             
             // Positionnement du serpent sur le canvas
             this.attr({
                 x: 100,
                 y: 200
             });
+            
+            // Direction actuelle du Snake
+            this.currentDirection = "e";
+            
+            // On déplace le serpent entre chaque frame
+            this.bind("EnterFrame", function() {
+                this.move(this.currentDirection, 1);
+            });
+            
+            // Changement de direction lorsque les touches directionnelles sont préssées
+            this.bind('KeyDown', function(e) {
+                this.currentDirection = { 38: "n", 39: "e", 40: "s", 37: "w" }[e.keyCode] || this.currentDirection;
+            });
+            
         }
     });
     
