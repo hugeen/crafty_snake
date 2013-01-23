@@ -23,6 +23,9 @@ window.onload = function () {
         init: function() {
             this.addComponent("2D, Canvas, shell, Collision");
             this.steps = [];
+            
+            this.collision(new Crafty.polygon([8,8], [24,8], [24, 24], [8, 24]))
+            
             // On enregistre les 10 dernières positions de cette partie
             this.bind("EnterFrame", function() {
                 this.steps.push({ x: this.x, y: this.y });
@@ -34,7 +37,7 @@ window.onload = function () {
         },
         // La tête du serpent
         head: function(snake) {
-            
+
             // Position par défaut
             this.attr({ x: 100, y: 200 });
 
@@ -45,9 +48,17 @@ window.onload = function () {
                 this.move(this.direction, this.speed);
             });
             
-            // Si le serpent touche un mur, on relance la partie
+            // Si le serpent touche un mur, on revient au menu
             this.onHit("Wall", function(){
                 Crafty.scene("menu");
+            });
+            
+            // Si le serpent touche sa queue, on revient au menu
+            this.onHit("SnakePart", function(collision) {
+                // La hitbox des 2 premières parties du serpent est désactivée
+                if(!collision[0].obj.disabledHitBox) {
+                    Crafty.scene("menu");
+                }
             });
             
             // Si on attrape un fruit
@@ -72,8 +83,10 @@ window.onload = function () {
             return this;
         },
         // Corps du serpent
-        body: function(snake, parent) {
+        body: function(snake, parent, disabledHitBox) {
             
+            this.disabledHitBox = disabledHitBox || false;
+
             // Position par défaut
             this.attr(parent.steps[0]);
             
@@ -84,8 +97,8 @@ window.onload = function () {
             
             return this;
         },
-        append: function(snake) {
-            snake.tail = this.child = Crafty.e("SnakePart").body(snake, this);
+        append: function(snake, disabledHitBox) {
+            snake.tail = Crafty.e("SnakePart").body(snake, this, disabledHitBox);
         }
     })
 
@@ -108,16 +121,29 @@ window.onload = function () {
             // La queue du serpent
             this.tail = this.head;
             
+            // On rajoute 2 parties au corps du serpent
+            this.tail.append(this, true);
+            this.tail.append(this, true);
+            
             // Changement de direction lorsque les touches directionnelles sont préssées
             this.bind('KeyDown', function(e) {
-
-                this.head.direction = {
+                
+                // Stockage de l'ancienne direction
+                var oldDirection = this.head.direction;
+                
+                // Stockage de la nouvelle direction
+                var newDirection = {
                     38: "n",
                     39: "e",
                     40: "s",
                     37: "w"
                 }[e.keyCode] || this.head.direction;
-
+                
+                // Si l'a nouvelle direction n'est pas l'opposée de l'ancienne on modifie la direction de notre serpent.
+                if(newDirection !== {"n":"s", "s":"n", "e":"w", "w":"e"}[oldDirection]) {
+                    this.head.direction = newDirection;
+                }
+                
             });
 
         }
