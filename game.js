@@ -1,7 +1,10 @@
 
 // Lorsque le DOM est chargé
 window.onload = function () {
-
+    
+    // Votre score actuel
+    var currentScore = 0;
+    
     // Initialisation de Crafty
     Crafty.init(400, 400, 5);
     Crafty.canvas.init();
@@ -44,11 +47,14 @@ window.onload = function () {
             
             // Si le serpent touche un mur, on relance la partie
             this.onHit("Wall", function(){
-                Crafty.scene("main");
+                Crafty.scene("menu");
             });
             
             // Si on attrape un fruit
             this.onHit("Food", function(collision) {
+                
+                // On incrémente le score en fonction de la vitesse actuelle
+                snake.score.increment(this.speed*1000);
                 
                 // Destruction du fruit
                 collision[0].obj.destroy();
@@ -92,7 +98,10 @@ window.onload = function () {
             // - Canvas pour la méthode d'affichage
             // - shell le sprite à afficher
             this.addComponent("2D, Canvas, Keyboard");
-
+            
+            // Création et affichage du score
+            this.score = Crafty.e("Score").display();
+            
             // Tête du serpent
             this.head = Crafty.e("SnakePart").head(this);
             
@@ -162,9 +171,59 @@ window.onload = function () {
         }
     });
     
+    // Création du composant Score
+    Crafty.c("Score", {
+        init: function() {
+            this.addComponent("2D, DOM, Text");
+            this.attr({ x: 40, y: 40, w: 200 });
+            
+            // Paramètres CSS à la jQuery
+            this.css({ font: '16px Verdana', color: "white" });
+            
+            // Réinitialisation du score
+            currentScore = 0;
+        },
+        // Incrémentation et display du score 
+        increment: function(by) {
+            currentScore += by;
+            this.display();
+            return this;
+        },
+        display: function() {
+            // Affichage du score à l'écran
+            this.text("Score: "+currentScore);
+            return this;
+        }
+    });
+    
+    
+    Crafty.scene("menu", function() {
+        
+        // Si un score est enregistré on l'affiche sur le menu
+        if(currentScore !== 0) {
+            Crafty.e("2D, DOM, Text")
+                .attr({ x: 40, y: 40, w: 200 })
+                .css({ font: '16px Verdana', color: "black" })
+                .text("Your score is: "+currentScore);
+        }
+        
+        // Instructions pour démarer une partie
+        Crafty.e("2D, DOM, Text, Keyboard")
+            .attr({ x: 40, y: 80, w: 200 })
+            .css({ font: '16px Verdana', color: "black" })
+            // Instructions
+            .text("Press arrow key to start")
+            // Si une flèche directionnelle est préssée on lance une partie
+            .bind('KeyUp', function(e) {
+                if(e.keyCode  === 37 || e.keyCode === 38 || e.keyCode === 39 || e.keyCode === 40) {
+                    Crafty.scene("main");
+                }
+            });
+    });
+    
     // Création de la scene principale
     Crafty.scene("main", function() {
-        
+                
         // Ajout de la map en image de fond
         Crafty.e("2D, Canvas, Image").image("assets/map.png");
         
@@ -183,7 +242,7 @@ window.onload = function () {
     Crafty.load(["assets/map.png", "assets/items.png"], function () {
         
         // Déclenchement de la scène principale
-        Crafty.scene("main");
+        Crafty.scene("menu");
         
     });
     
