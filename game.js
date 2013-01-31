@@ -8,26 +8,26 @@ window.onload = function () {
     var sprintInterval = false;
     
     // Initialisation de Crafty
-    Crafty.init(400, 400, 5);
+    Crafty.init(500, 600, 5);
     Crafty.canvas.init();
     
     // On map notre spritesheet
-    Crafty.sprite(32, "assets/items.png", {
-        apple: [0, 0],
-        fruits: [1, 0],
-        egg: [2, 0],
-        shell: [3, 0],
-        flask: [4, 0]
+    Crafty.sprite(32, "assets/snakeitems01.png", {
+        sprint: [0, 0],
+        sweet: [1, 0],
+        cut: [2, 0],
+        part: [3, 0],
+        head: [4, 0]
     });
     
     // Création du composant des bouts du serpent
     Crafty.c("SnakePart", {
         init: function() {
-            this.addComponent("2D, Canvas, shell, Collision");
+            this.addComponent("2D, Canvas, Collision");
             this.steps = [];
-            this.attr({ x: -200, y: -200 });
+            this.attr({ x: -200, y: -200, w: 32, h: 32 });
             this.collision(new Crafty.polygon([10,10], [20,10], [20, 20], [10, 20]))
-            
+            this.origin("center");
             // On enregistre les 10 dernières positions de cette partie
             this.bind("EnterFrame", function() {
                 this.steps.push({ x: this.x, y: this.y });
@@ -40,16 +40,30 @@ window.onload = function () {
         // La tête du serpent
         head: function(snake) {
             
-            this.addComponent("Delay");
+            
+            this.addComponent("Delay, head");
             
             // Position par défaut
-            this.attr({ x: 100, y: 200 });
+            this.attr({ x: 100, y: 200, z: 1 });
 
             this.speed = 1;
             this.direction = "e";
             this.speedMultiplier = 1;
             
             this.bind("EnterFrame", function() {
+                
+                if(this.direction == "w") {
+                    this.attr({ rotation: 180 });
+                }
+                if(this.direction == "e") {
+                    this.attr({ rotation: 0 });
+                }
+                if(this.direction == "n") {
+                    this.attr({ rotation: 270 });
+                }
+                if(this.direction == "s") {
+                    this.attr({ rotation: 90 });
+                }
                 this.move(this.direction, this.speed*this.speedMultiplier);
             });
             
@@ -60,6 +74,7 @@ window.onload = function () {
             
             // Si le serpent touche sa queue, on revient au menu
             this.onHit("SnakePart", function(collision) {
+                
                 // La hitbox des 2 premières parties du serpent est désactivée
                 if(!collision[0].obj.disabledHitBox) {
                     Crafty.scene("menu");
@@ -70,7 +85,7 @@ window.onload = function () {
             this.onHit("Food", function(collision) {
                 
                 // On incrémente le score en fonction de la vitesse actuelle
-                snake.score.increment(this.speed*1000);
+                snake.score.increment(this.speed*100);
                 
                 /// Destruction du fruit
                 for(var index in collision) {
@@ -81,7 +96,7 @@ window.onload = function () {
                 Crafty.e("Food");
                 
                 // Augmentation de la vitesse
-                this.speed += 0.075;
+                this.speed += 0.085;
                 
                 // On rajoute un bout au corps du serpent
                 snake.tail.append(snake);
@@ -92,7 +107,7 @@ window.onload = function () {
             this.onHit("Bonus", function(collision) {
                 
                 // On incrémente le score en fonction de la vitesse actuelle
-                snake.score.increment(this.speed*1000*2);
+                snake.score.increment(this.speed*100*2);
                 
                 // Destruction du fruit
                 for(var index in collision) {
@@ -100,7 +115,7 @@ window.onload = function () {
                 }
                         
                 // Augmentation de la vitesse
-                this.speed -= 0.075*2;
+                this.speed -= 0.085*2;
                 
                 for(var i = 0; i < 2; i++) {
                     var oldTail = snake.tail;
@@ -112,7 +127,7 @@ window.onload = function () {
             
             this.onHit("Sprint", function(collision) {
                 
-                snake.score.increment(this.speed*1000*2);
+                snake.score.increment(this.speed*100*2);
                 
                 for(var index in collision) {
                     collision[index].obj.destroy();
@@ -122,7 +137,7 @@ window.onload = function () {
                 
                 this.delay(function() {
                     this.speedMultiplier = 1;
-                }, 3*1000);
+                }, 3*100);
 
 
             });
@@ -130,9 +145,9 @@ window.onload = function () {
         },
         // Corps du serpent
         body: function(snake, parent, disabledHitBox) {
-            
+            this.addComponent("part");
             this.parentPart = parent;
-            
+            this.attr({ z: parent._z-1 });
             this.disabledHitBox = disabledHitBox || false;
 
             // Position par défaut
@@ -140,7 +155,20 @@ window.onload = function () {
             
             // chaque partie du corps du serpent suivra la précédente
             this.bind("EnterFrame", function() {
+                if(parent.steps[0].x-this._x > 0) {
+                    this.attr({ rotation: 180 });
+                }
+                if(parent.steps[0].x-this._x < 0) {
+                    this.attr({ rotation: 0 });
+                }
+                if(parent.steps[0].y-this._y > 0) {
+                    this.attr({ rotation: 270 });
+                }
+                if(parent.steps[0].y-this._y < 0) {
+                    this.attr({ rotation: 90 });
+                }
                 this.attr(parent.steps[0]);
+                
             });
             
             return this;
@@ -200,7 +228,7 @@ window.onload = function () {
     // Composant Food
     Crafty.c("Bonus", {
         init: function() {
-            this.addComponent("2D, Canvas, apple, Collision, Delay");
+            this.addComponent("2D, Canvas, cut, Collision, Delay");
             this.attr({
                 w: 32,
                 h: 32,
@@ -219,7 +247,7 @@ window.onload = function () {
     // Composant Food
     Crafty.c("Sprint", {
         init: function() {
-            this.addComponent("2D, Canvas, egg, Collision, Delay");
+            this.addComponent("2D, Canvas, sprint, Collision, Delay");
             this.attr({
                 w: 32,
                 h: 32,
@@ -238,13 +266,13 @@ window.onload = function () {
     // Composant Food
     Crafty.c("Food", {
         init: function() {
-            this.addComponent("2D, Canvas, fruits, Collision");
+            this.addComponent("2D, Canvas, sweet, Collision");
             this.attr({
                 w: 32,
                 h: 32,
                 // On ajoute un fruit positionné aléatoirement sur le terrain
-                x: Crafty.math.randomInt(32, 336),
-                y: Crafty.math.randomInt(32, 304)
+                x: Crafty.math.randomInt(32, 443),
+                y: Crafty.math.randomInt(32, 468)
             });
         }
     });
@@ -262,23 +290,23 @@ window.onload = function () {
 
             // Création du mur Nord
             Crafty.e("Wall")
-                .attr({x: 16, y: 16, w: 368, h: 16}) // Positionnement du mur
-                .collision(new Crafty.polygon([0,0], [368,0], [368, 16], [0, 16])); // Hitbox du mur
+                .attr({x: 16, y: 16, w: 468, h: 16}) // Positionnement du mur
+                .collision(new Crafty.polygon([0,0], [468,0], [468, 16], [0, 16])); // Hitbox du mur
                 
             // Mur Est
             Crafty.e("Wall")
-                .attr({x: 368, y: 16, w: 16, h: 336})
-                .collision(new Crafty.polygon([0,0], [16,0], [16, 336], [0, 336]));
+                .attr({x: 475, y: 16, w: 16, h: 436})
+                .collision(new Crafty.polygon([0,0], [16,0], [16, 500], [0, 500]));
             
             // Mur Sud
             Crafty.e("Wall")
-                .attr({x: 16, y: 336, w: 368, h: 16})
-                .collision(new Crafty.polygon([0,0], [368,0], [368, 16], [0, 16]));
+                .attr({x: 16, y: 500, w: 468, h: 16})
+                .collision(new Crafty.polygon([0,0], [468,0], [468, 16], [0, 16]));
             
             // Mur Ouest
             Crafty.e("Wall")
-                .attr({x: 16, y: 16, w: 16, h: 336})
-                .collision(new Crafty.polygon([0,0], [16,0], [16, 336], [0, 336]));
+                .attr({x: 16, y: 16, w: 16, h: 436})
+                .collision(new Crafty.polygon([0,0], [16,0], [16, 500], [0, 500]));
             
         }
     });
@@ -290,7 +318,7 @@ window.onload = function () {
             this.attr({ x: 40, y: 40, w: 200 });
             
             // Paramètres CSS à la jQuery
-            this.css({ font: '16px Verdana', color: "white" });
+            this.css({ font: '16px Verdana', color: "black" });
             
             // Réinitialisation du score
             currentScore = 0;
@@ -303,7 +331,7 @@ window.onload = function () {
         },
         display: function() {
             // Affichage du score à l'écran
-            this.text("Score: "+currentScore);
+            this.text("Score: "+Math.round(currentScore));
             return this;
         }
     });
@@ -314,33 +342,24 @@ window.onload = function () {
         clearInterval(bonusInterval);
         clearInterval(sprintInterval);
         
-        // Si un score est enregistré on l'affiche sur le menu
-        if(currentScore !== 0) {
-            Crafty.e("2D, DOM, Text")
-                .attr({ x: 40, y: 40, w: 200 })
-                .css({ font: '16px Verdana', color: "black" })
-                .text("Your score is: "+currentScore);
-        }
+        // Ajout de la map en image de fond
+        Crafty.e("2D, Canvas, Image, Keyboard").image("assets/snakescreen01.png").attr({ z: -9999 }).bind('KeyUp', function(e) {
+            if(e.keyCode  === 37 || e.keyCode === 38 || e.keyCode === 39 || e.keyCode === 40) {
+                Crafty.scene("main");
+            }
+        });
         
-        // Instructions pour démarer une partie
-        Crafty.e("2D, DOM, Text, Keyboard")
-            .attr({ x: 40, y: 80, w: 200 })
-            .css({ font: '16px Verdana', color: "black" })
-            // Instructions
-            .text("Press arrow key to start")
-            // Si une flèche directionnelle est préssée on lance une partie
-            .bind('KeyUp', function(e) {
-                if(e.keyCode  === 37 || e.keyCode === 38 || e.keyCode === 39 || e.keyCode === 40) {
-                    Crafty.scene("main");
-                }
-            });
+        Crafty.e("2D, DOM, Text")
+            .attr({ x: 98, y: 45, w: 200 })
+            .css({ font: '15px Verdana', color: "black" })
+            .text(Math.round(currentScore));
     });
     
     // Création de la scene principale
     Crafty.scene("main", function() {
                 
         // Ajout de la map en image de fond
-        Crafty.e("2D, Canvas, Image").image("assets/map.png");
+        Crafty.e("2D, Canvas, Image").image("assets/snakefond01.png").attr({ z: -9999 });
         
         // Ajout des limites du terrain de jeu
         Crafty.e("Walls");
@@ -353,17 +372,17 @@ window.onload = function () {
         
         bonusInterval = setInterval(function() {
             Crafty.e("Bonus");
-        }, 20*1000);
+        }, 23*1000);
         
         sprintInterval = setInterval(function() {
             Crafty.e("Sprint");
-        }, 18*1000);
+        }, 19*1000);
 
         
     });
     
     // Chargement des assets
-    Crafty.load(["assets/map.png", "assets/items.png"], function () {
+    Crafty.load(["assets/snakefond01.png", "assets/snakeitems01.png", "assets/snakescreen01.png"], function () {
         
         // Déclenchement de la scène principale
         Crafty.scene("menu");
