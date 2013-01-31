@@ -4,6 +4,8 @@ window.onload = function () {
     
     // Votre score actuel
     var currentScore = 0;
+    var bonusInterval = false;
+    var sprintInterval = false;
     
     // Initialisation de Crafty
     Crafty.init(400, 400, 5);
@@ -23,8 +25,8 @@ window.onload = function () {
         init: function() {
             this.addComponent("2D, Canvas, shell, Collision");
             this.steps = [];
-            
-            this.collision(new Crafty.polygon([8,8], [24,8], [24, 24], [8, 24]))
+            this.attr({ x: -200, y: -200 });
+            this.collision(new Crafty.polygon([10,10], [20,10], [20, 20], [10, 20]))
             
             // On enregistre les 10 dernières positions de cette partie
             this.bind("EnterFrame", function() {
@@ -37,15 +39,18 @@ window.onload = function () {
         },
         // La tête du serpent
         head: function(snake) {
-
+            
+            this.addComponent("Delay");
+            
             // Position par défaut
             this.attr({ x: 100, y: 200 });
 
             this.speed = 1;
             this.direction = "e";
+            this.speedMultiplier = 1;
             
             this.bind("EnterFrame", function() {
-                this.move(this.direction, this.speed);
+                this.move(this.direction, this.speed*this.speedMultiplier);
             });
             
             // Si le serpent touche un mur, on revient au menu
@@ -67,8 +72,10 @@ window.onload = function () {
                 // On incrémente le score en fonction de la vitesse actuelle
                 snake.score.increment(this.speed*1000);
                 
-                // Destruction du fruit
-                collision[0].obj.destroy();
+                /// Destruction du fruit
+                for(var index in collision) {
+                    collision[index].obj.destroy();
+                }
                 
                 // Création d'un nouveau fruit
                 Crafty.e("Food");
@@ -80,10 +87,51 @@ window.onload = function () {
                 snake.tail.append(snake);
                 
             });
+            
+            // Si on attrape un fruit
+            this.onHit("Bonus", function(collision) {
+                
+                // On incrémente le score en fonction de la vitesse actuelle
+                snake.score.increment(this.speed*1000*2);
+                
+                // Destruction du fruit
+                for(var index in collision) {
+                    collision[index].obj.destroy();
+                }
+                        
+                // Augmentation de la vitesse
+                this.speed -= 0.075*2;
+                
+                for(var i = 0; i < 2; i++) {
+                    var oldTail = snake.tail;
+                    snake.tail = snake.tail.parentPart;
+                    oldTail.destroy();
+                }
+
+            });
+            
+            this.onHit("Sprint", function(collision) {
+                
+                snake.score.increment(this.speed*1000*2);
+                
+                for(var index in collision) {
+                    collision[index].obj.destroy();
+                }
+
+                this.speedMultiplier = 2;
+                
+                this.delay(function() {
+                    this.speedMultiplier = 1;
+                }, 3*1000);
+
+
+            });
             return this;
         },
         // Corps du serpent
         body: function(snake, parent, disabledHitBox) {
+            
+            this.parentPart = parent;
             
             this.disabledHitBox = disabledHitBox || false;
 
@@ -148,6 +196,44 @@ window.onload = function () {
 
         }
     });
+
+    // Composant Food
+    Crafty.c("Bonus", {
+        init: function() {
+            this.addComponent("2D, Canvas, apple, Collision, Delay");
+            this.attr({
+                w: 32,
+                h: 32,
+
+                x: Crafty.math.randomInt(32, 336),
+                y: Crafty.math.randomInt(32, 304)
+            });
+            
+            this.delay(function() {
+                this.destroy();
+            }, Crafty.math.randomInt(4, 8)*1000);
+            
+        }
+    });
+    
+    // Composant Food
+    Crafty.c("Sprint", {
+        init: function() {
+            this.addComponent("2D, Canvas, egg, Collision, Delay");
+            this.attr({
+                w: 32,
+                h: 32,
+
+                x: Crafty.math.randomInt(32, 336),
+                y: Crafty.math.randomInt(32, 304)
+            });
+            
+            this.delay(function() {
+                this.destroy();
+            }, Crafty.math.randomInt(5, 9)*1000);
+            
+        }
+    });
     
     // Composant Food
     Crafty.c("Food", {
@@ -161,7 +247,7 @@ window.onload = function () {
                 y: Crafty.math.randomInt(32, 304)
             });
         }
-    })
+    });
     
     // Composant Mur
     Crafty.c("Wall", {
@@ -225,6 +311,9 @@ window.onload = function () {
     
     Crafty.scene("menu", function() {
         
+        clearInterval(bonusInterval);
+        clearInterval(sprintInterval);
+        
         // Si un score est enregistré on l'affiche sur le menu
         if(currentScore !== 0) {
             Crafty.e("2D, DOM, Text")
@@ -261,6 +350,15 @@ window.onload = function () {
         
         // Ajout du premier fruit
         Crafty.e("Food");
+        
+        bonusInterval = setInterval(function() {
+            Crafty.e("Bonus");
+        }, 20*1000);
+        
+        sprintInterval = setInterval(function() {
+            Crafty.e("Sprint");
+        }, 18*1000);
+
         
     });
     
