@@ -1,0 +1,74 @@
+body {
+  margin: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #333333;
+  background-color: #ffffff;
+}
+
+#cr-stage {
+  margin: 5px auto;
+  color: black;
+}
+
+a {
+  color: #0088cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #005580;
+  text-decoration: underline;
+}
+
+h1,
+h2 {
+  margin: 10px 0;
+  font-family: inherit;
+  font-weight: bold;
+  line-height: 20px;
+  color: inherit;
+  text-rendering: optimizelegibility;
+  line-height: 40px;
+  text-align: center;
+}
+
+h1 small,
+h2 small {
+  font-weight: normal;
+  line-height: 1;
+  color: #999999;
+}
+
+h1 {
+    font-size: 30px;
+    font-weight: 200;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+h2 {
+    color: #999999;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.25;
+    margin-bottom: 10px;
+}
+
+h1 small {
+  font-size: 20px;
+}
+
+h2 small {
+  font-size: 12px;
+}
+
+p {
+  margin: 0 0 10px;
+  text-align: center;
+}
+
+.loupine {
+  color:  #DA4F49;
+}
